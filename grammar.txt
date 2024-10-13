@@ -1,0 +1,13 @@
+// Grammar for Mirror.
+
+program = {signature | example | expression}
+signature = "signature" name "(" parameters ")" "->" type
+example = "example" name "(" literals ")" "=" literal
+expression = name "(" subexpression ")"
+subexpression = (expression | literal) {"," (expression | literal)}
+literals = literal {"," literal}
+literal = string | number | "true" | "false" | "[" literal "]" |  "{" literal ":" literal "}"
+parameters = parameter {"," parameter}
+parameter = name ":" type
+type = "string" | "number" | "bool" | "list[" type "]" | "dict{" type "}"
+// name, string, number are tokens
