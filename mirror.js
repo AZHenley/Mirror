@@ -195,3 +195,39 @@ class Mirror {
         return this.current >= this.tokens.length;
     }
 }
+
+function extractExpressions(ast) {
+    return ast.filter(node => node.type === 'expression');
+}
+
+function groupSignaturesWithExamples(ast) {
+    const signatures = ast.filter(node => node.type === 'signature');
+    const examples = ast.filter(node => node.type === 'example');
+
+    return signatures.map(signature => {
+        const matchingExamples = examples.filter(example => example.name === signature.name);
+        return {
+            ...signature,
+            examples: matchingExamples
+        };
+    });
+}
+
+
+// Example usage:
+
+const input = `
+    signature myFunc(a: string, b: number) -> bool
+    example test1("hello", 123) = true
+    myFunc("world", 456)
+`;
+
+const parser = new Mirror(input);
+const ast = parser.parse();
+console.log(JSON.stringify(ast, null, 2));
+
+const expressions = extractExpressions(ast);
+console.log(expressions);
+const signaturesWithExamples = groupSignaturesWithExamples(ast);
+console.log(signaturesWithExamples);
+
