@@ -1,6 +1,6 @@
 class Mirror {
     constructor(input) {
-        this.tokens = input.match(/\S+/g) || [];
+        this.tokens = input.match(/[\w]+|->|[.,:()\[\]{}]|"(?:\\"|[^"])*"|\d+|\S/g) || [];
         this.current = 0;
     }
 
@@ -216,18 +216,18 @@ function groupSignaturesWithExamples(ast) {
 
 // Example usage:
 
-const input = `
-    signature myFunc(a: string, b: number) -> bool
-    example test1("hello", 123) = true
-    myFunc("world", 456)
-`;
+// const input = `
+//     signature myFunc(a: string, b: number) -> bool
+//     example test1("hello", 123) = true
+//     myFunc("world", 456)
+// `;
 
-const parser = new Mirror(input);
-const ast = parser.parse();
-console.log(JSON.stringify(ast, null, 2));
+// const parser = new Mirror(input);
+// const ast = parser.parse();
+// console.log(JSON.stringify(ast, null, 2));
 
-const expressions = extractExpressions(ast);
-console.log(expressions);
-const signaturesWithExamples = groupSignaturesWithExamples(ast);
-console.log(signaturesWithExamples);
+// const expressions = extractExpressions(ast);
+// console.log(expressions);
+// const signaturesWithExamples = groupSignaturesWithExamples(ast);
+// console.log(signaturesWithExamples);
 
