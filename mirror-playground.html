@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ace Editor Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        header {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .explanation {
+            margin-bottom: 20px;
+        }
+
+        .textbox {
+            width: 16em;
+            height: 30px;
+            margin-bottom: 20px;
+        }
+
+        .editor-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .editor {
+            width: 49%;
+            height: 300px;
+            border: 1px solid #ccc;
+        }
+
+        .button-container {
+            margin-bottom: 20px;
+        }
+
+        .button-container button {
+            padding: 10px 15px;
+            margin-right: 10px;
+        }
+
+        .status-label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>Playground for Mirror</header>
+
+<p class="explanation">
+    Blah blah blah blah blah.
+</p>
+
+<input type="text" class="textbox" placeholder="Your throwaway OpenAI API key">
+
+<div class="editor-container">
+    <div id="editor1" class="editor"></div>
+    <div id="editor2" class="editor"></div>
+</div>
+
+<div class="button-container">
+    <button id="button1">Button 1</button>
+    <button id="button2">Button 2</button>
+</div>
+
+<div class="status-label" id="status">Status: Ready</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ace-builds@1.23.4/src-min-noconflict/ace.min.js"></script>
+<script src="mirror.js"></script>
+<script>
+    // Initialize the first Ace editor
+    var editor1 = ace.edit("editor1");
+    //editor1.setTheme("ace/theme/monokai");
+    //editor1.session.setMode("ace/mode/javascript");
+    const initialText = `signature foo(x: number, y: number) -> number
+example foo(10, 3) = 101010
+example foo(1, 1) = 1
+example foo(0, 10) = 0
+
+foo(123, 3)`;
+    editor1.setValue(initialText);
+    editor1.clearSelection();
+    editor1.moveCursorTo(0, 0);
+
+    // Initialize the second Ace editor
+    var editor2 = ace.edit("editor2");
+    //editor2.setTheme("ace/theme/monokai");
+    editor2.session.setMode("ace/mode/javascript");
+    editor2.setReadOnly(true);
+
+    // Button 1 action
+    document.getElementById("button1").addEventListener("click", function() {
+        document.getElementById("status").textContent = "Status: Button 1 clicked!";
+        
+        // Get the content from editor1
+        const code = editor1.getValue();
+        
+        try {
+            // Create a new Mirror parser instance and parse the code
+            const parser = new Mirror(code);
+            const ast = parser.parse();
+            
+            // Format the AST as a string and display it in editor2
+            const formattedResult = JSON.stringify(ast, null, 2);
+            editor2.setValue(formattedResult);
+            editor2.clearSelection(); // Clear any selected text
+            
+            document.getElementById("status").textContent = "Status: Code parsed successfully!";
+        } catch (error) {
+            // Display error in editor2 if parsing fails
+            editor2.setValue("Error: " + error.message);
+            editor2.clearSelection();
+            document.getElementById("status").textContent = "Status: Parsing error!";
+        }
+    });
+
+    // Button 2 action
+    document.getElementById("button2").addEventListener("click", function() {
+        document.getElementById("status").textContent = "Status: Button 2 clicked!";
+    });
+</script>
+</body>
+</html>
