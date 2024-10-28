@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ace Editor Example</title>
+    <title>Mirror Playground</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,16 +60,16 @@
     Blah blah blah blah blah.
 </p>
 
-<input type="text" class="textbox" placeholder="Your throwaway OpenAI API key">
+<input type="text" class="textbox" id="api-key" placeholder="Your throwaway OpenAI API key">
 
 <div class="editor-container">
-    <div id="editor1" class="editor"></div>
-    <div id="editor2" class="editor"></div>
+    <div id="editor-source" class="editor"></div>
+    <div id="editor-intermediate" class="editor"></div>
 </div>
 
 <div class="button-container">
-    <button id="button1">Button 1</button>
-    <button id="button2">Button 2</button>
+    <button id="button-compile">Compile</button>
+    <button id="button-run">Run</button>
 </div>
 
 <div class="status-label" id="status">Status: Ready</div>
@@ -77,8 +77,7 @@
 <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.23.4/src-min-noconflict/ace.min.js"></script>
 <script src="mirror.js"></script>
 <script>
-    // Initialize the first Ace editor
-    var editor1 = ace.edit("editor1");
+    var editor1 = ace.edit("editor-source");
     //editor1.setTheme("ace/theme/monokai");
     //editor1.session.setMode("ace/mode/javascript");
     const initialText = `signature foo(x: number, y: number) -> number
@@ -91,41 +90,46 @@ foo(123, 3)`;
     editor1.clearSelection();
     editor1.moveCursorTo(0, 0);
 
-    // Initialize the second Ace editor
-    var editor2 = ace.edit("editor2");
+    var editor2 = ace.edit("editor-intermediate");
     //editor2.setTheme("ace/theme/monokai");
     editor2.session.setMode("ace/mode/javascript");
     editor2.setReadOnly(true);
 
-    // Button 1 action
-    document.getElementById("button1").addEventListener("click", function() {
-        document.getElementById("status").textContent = "Status: Button 1 clicked!";
+    // Compile button action.
+    document.getElementById("button-compile").addEventListener("click", function() {
+        document.getElementById("status").textContent = "Status: Compile button clicked!";
         
-        // Get the content from editor1
+        // Get the content from editor1.
         const code = editor1.getValue();
         
         try {
-            // Create a new Mirror parser instance and parse the code
+            // Create a new Mirror parser instance and parse the code.
             const parser = new Mirror(code);
             const ast = parser.parse();
+            const expressions =  extractExpressions(ast);
+            const reorganizedAST = groupSignaturesWithExamples(ast);
             
-            // Format the AST as a string and display it in editor2
-            const formattedResult = JSON.stringify(ast, null, 2);
-            editor2.setValue(formattedResult);
-            editor2.clearSelection(); // Clear any selected text
+            // Format the AST as a string and display it in editor2.
+            const ASToutput = JSON.stringify(ast, null, 2);
+            const expressionsoutput =  JSON.stringify(expressions)
+            let reorganizedASToutput = JSON.stringify(reorganizedAST)
+        
+            editor2.setValue(ASToutput + "\n\n@@@\n\n" + expressionsoutput + "\n\n@@@\n\n" + reorganizedASToutput);
+            editor2.clearSelection(); // Clear any selected text.
+
             
             document.getElementById("status").textContent = "Status: Code parsed successfully!";
         } catch (error) {
-            // Display error in editor2 if parsing fails
+            // Display error in editor2 if parsing fails.
             editor2.setValue("Error: " + error.message);
             editor2.clearSelection();
             document.getElementById("status").textContent = "Status: Parsing error!";
         }
     });
 
-    // Button 2 action
-    document.getElementById("button2").addEventListener("click", function() {
-        document.getElementById("status").textContent = "Status: Button 2 clicked!";
+    // Run button action.
+    document.getElementById("button-run").addEventListener("click", function() {
+        document.getElementById("status").textContent = "Status: Run button clicked!";
     });
 </script>
 </body>

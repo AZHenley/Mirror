@@ -1,3 +1,9 @@
+// This file includes the parser and the compiler/LLM classes.
+
+// Compiler/LLM wrapper class.
+
+
+// Parser.
 class Mirror {
     constructor(input) {
         this.tokens = input.match(/[\w]+|->|[.,:()\[\]{}]|"(?:\\"|[^"])*"|\d+|\S/g) || [];
