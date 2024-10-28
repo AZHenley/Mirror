@@ -1,10 +1,31 @@
 // This file includes the parser and the compiler/LLM classes.
 
-// Compiler/LLM wrapper class.
+// Compiler/LLM wrapper.
+class MirrorCompiler {
+    async callOpenAI(apiKey, prompt) {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error?.message || "Unknown error");
+        }
+        return data.choices[0].message.content;
+    }
+}
 
 
 // Parser.
-class Mirror {
+class MirrorParser {
     constructor(input) {
         this.tokens = input.match(/[\w]+|->|[.,:()\[\]{}]|"(?:\\"|[^"])*"|\d+|\S/g) || [];
         this.current = 0;
