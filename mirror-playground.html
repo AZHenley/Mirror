@@ -177,6 +177,7 @@ bar(foo(123, 3))`;
         try {
             const response = await compiler.callOpenAI(apiKey, prompt);
             let generatedCode = response;
+            // TODO: We should first verify that the examples do indeed run as specified.
             editor2.setValue(generatedCode);
             editor2.clearSelection();
             document.getElementById("status").textContent = "Status: Response received from OpenAI!";

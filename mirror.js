@@ -223,6 +223,8 @@ class MirrorParser {
     }
 }
 
+// TODO: The public functions need to be refactored. There should be a single "compile" function that takes the raw code. Move that behavior from the playground to here.
+
 function extractExpressions(ast) {
     return ast.filter(node => node.type === 'expression');
 }
