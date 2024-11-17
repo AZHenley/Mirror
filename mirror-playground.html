@@ -66,10 +66,10 @@
 </head>
 <body>
 
-<header>Playground for Mirror</header>
+<h1>Playground for Mirror</h1>
 
 <p class="explanation">
-    Blah blah blah blah blah.
+    The Mirror programming language powered by programming by example and AI.
 </p>
 
 <input type="text" class="textbox" id="api-key" placeholder="Your throwaway OpenAI API key">
@@ -86,7 +86,21 @@
 
 <div class="scrollable-box" id="output"></div>
 
-<br><div class="status-label" id="status">Status: Ready</div>
+<br><div class="status-label" id="status">Status: Ready</div><br><br>
+
+<hr>
+
+<h3>Documentation</h3>
+
+<p>See the <a href="https://austinhenley.com/blog/mirrorlang.html">blog post</a> for more information about Mirror.</p>
+
+<p>The Mirror programming language allows you to express behavior <i>only</i> through examples. These examples are then passed to an LLM to generate JavaScript code that satisfies the example behavior (ideally). You can then execute those functions.</p>
+
+<p>The syntax of the language allows function signatures, examples, and function expressions. The only types allowed are <i>number</i>, <i>bool</i>, <i>string</i>, list of any type (e.g., <i>list[bool]</i>), and dictionary.</p>
+
+<p>Please submit any improvements to the GitHub <a href="https://github.com/AZHenley/Mirror">repo</a>.</p>
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.23.4/src-min-noconflict/ace.min.js"></script>
 <script src="mirror.js"></script>
@@ -111,6 +125,7 @@ bar(foo(123, 3))`;
     var editor2 = ace.edit("editor-intermediate");
     //editor2.setTheme("ace/theme/monokai");
     editor2.session.setMode("ace/mode/javascript");
+    editor2.container.style.background = "lightgray";
     editor2.setReadOnly(true);
 
     // Compile button action.
