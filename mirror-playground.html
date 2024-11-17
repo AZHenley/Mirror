@@ -101,6 +101,7 @@ foo(123, 3)`;
 
         // Parse!
         const code = editor1.getValue();
+        let reorganizedASToutput = "";
         
         try {
             // Create a new Mirror parser instance and parse the code.
@@ -112,7 +113,7 @@ foo(123, 3)`;
             // Format the AST as a string and display it in editor2.
             const ASToutput = JSON.stringify(ast, null, 2);
             const expressionsoutput =  JSON.stringify(expressions)
-            let reorganizedASToutput = JSON.stringify(reorganizedAST)
+            reorganizedASToutput = JSON.stringify(reorganizedAST)
         
             // For debugging:
             // editor2.setValue(ASToutput + "\n\n@@@\n\n" + expressionsoutput + "\n\n@@@\n\n" + reorganizedASToutput);
@@ -124,17 +125,19 @@ foo(123, 3)`;
             editor2.setValue("Error: " + error.message);
             editor2.clearSelection();
             document.getElementById("status").textContent = "Status: Parsing error!";
+            return;
         }
 
         // Compile!
-        const compiler = new MirrorCompiler();
-        const apiKey = document.getElementById("api-key").value;
-        const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Only give the function body code, without the outer function definition." // TODO: Inject examples.
-
         if (!apiKey) {
             document.getElementById("status").textContent = "Status: Enter your OpenAI API key."
             return;
         }
+
+        const compiler = new MirrorCompiler();
+        const apiKey = document.getElementById("api-key").value;
+        const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Do not format it as Markdown. Only give the function.\n\n" + reorganizedASToutput;
+        // TODO: This really should make separate calls to OpenAI to generate each function body. Then our code should emit the JS function signature and use the function body from OpenAI. 
 
         try {
             const response = await compiler.callOpenAI(apiKey, prompt);
@@ -150,6 +153,7 @@ foo(123, 3)`;
 
     // Run button action.
     document.getElementById("button-run").addEventListener("click", async function() {
+        // TODO.
         document.getElementById("status").textContent = "Status: Run button clicked!";
     });
 </script>
