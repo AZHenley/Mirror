@@ -130,7 +130,13 @@ bar(foo(123, 3))`;
 
     // Compile button action.
     document.getElementById("button-compile").addEventListener("click", async function() {
-        document.getElementById("status").textContent = "Status: Compile button clicked!";
+        const apiKey = document.getElementById("api-key").value;
+        if (!apiKey) {
+            document.getElementById("status").textContent = "Status: Enter your OpenAI API key."
+            return;
+        }
+        document.getElementById("status").textContent = "Status: Compiling...";
+        editor2.setValue("Compiling...")
 
         // Parse!
         const code = editor1.getValue();
@@ -164,13 +170,7 @@ bar(foo(123, 3))`;
 
         // Compile!
         const compiler = new MirrorCompiler();
-        const apiKey = document.getElementById("api-key").value;
-        if (!apiKey) {
-            document.getElementById("status").textContent = "Status: Enter your OpenAI API key."
-            return;
-        }
         const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Do not format it as Markdown. Only give the function and the function call expressions afterwards if applicable.\n\n" + reorganizedASToutput + "\n\n" + expressionsoutput;
-        console.log(reorganizedASToutput);
         // TODO: This really should make separate calls to OpenAI to generate each function body. Then our code should emit the JS function signature and use the function body from OpenAI. 
         // TODO: Similarly, the function call expressions should not go to OpenAI. The parser should have a function to emit them.
 
