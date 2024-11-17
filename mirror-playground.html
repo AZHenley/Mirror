@@ -37,6 +37,18 @@
             border: 1px solid #ccc;
         }
 
+        .scrollable-box {
+            width: 99%;
+            height: 4em;
+            background-color: rgb(235, 235, 235);
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            word-wrap: break-word; 
+            padding: 0.5em; 
+            box-sizing: border-box;
+            border: 1px solid darkgray;
+        }
+
         .button-container {
             margin-bottom: 20px;
         }
@@ -72,7 +84,9 @@
     <button id="button-run">Run</button>
 </div>
 
-<div class="status-label" id="status">Status: Ready</div>
+<div class="scrollable-box" id="output"></div>
+
+<br><div class="status-label" id="status">Status: Ready</div>
 
 <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.23.4/src-min-noconflict/ace.min.js"></script>
 <script src="mirror.js"></script>
@@ -85,7 +99,11 @@ example foo(10, 3) = 101010
 example foo(1, 1) = 1
 example foo(0, 10) = 0
 
-foo(123, 3)`;
+signature bar(x: number) -> string
+example bar(9) = "length is 1"
+example bar(3210) = "length is 4"
+
+bar(foo(123, 3))`;
     editor1.setValue(initialText);
     editor1.clearSelection();
     editor1.moveCursorTo(0, 0);
@@ -102,6 +120,7 @@ foo(123, 3)`;
         // Parse!
         const code = editor1.getValue();
         let reorganizedASToutput = "";
+        let expressionsoutput = "";
         
         try {
             // Create a new Mirror parser instance and parse the code.
@@ -112,7 +131,7 @@ foo(123, 3)`;
             
             // Format the AST as a string and display it in editor2.
             const ASToutput = JSON.stringify(ast, null, 2);
-            const expressionsoutput =  JSON.stringify(expressions)
+            expressionsoutput =  JSON.stringify(expressions)
             reorganizedASToutput = JSON.stringify(reorganizedAST)
         
             // For debugging:
@@ -129,19 +148,21 @@ foo(123, 3)`;
         }
 
         // Compile!
+        const compiler = new MirrorCompiler();
+        const apiKey = document.getElementById("api-key").value;
         if (!apiKey) {
             document.getElementById("status").textContent = "Status: Enter your OpenAI API key."
             return;
         }
-
-        const compiler = new MirrorCompiler();
-        const apiKey = document.getElementById("api-key").value;
-        const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Do not format it as Markdown. Only give the function.\n\n" + reorganizedASToutput;
+        const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Do not format it as Markdown. Only give the function and the function call expressions afterwards if applicable.\n\n" + reorganizedASToutput + "\n\n" + expressionsoutput;
+        console.log(reorganizedASToutput);
         // TODO: This really should make separate calls to OpenAI to generate each function body. Then our code should emit the JS function signature and use the function body from OpenAI. 
+        // TODO: Similarly, the function call expressions should not go to OpenAI. The parser should have a function to emit them.
 
         try {
             const response = await compiler.callOpenAI(apiKey, prompt);
-            editor2.setValue(response);
+            let generatedCode = response;
+            editor2.setValue(generatedCode);
             editor2.clearSelection();
             document.getElementById("status").textContent = "Status: Response received from OpenAI!";
         } catch (error) {
@@ -153,8 +174,10 @@ foo(123, 3)`;
 
     // Run button action.
     document.getElementById("button-run").addEventListener("click", async function() {
-        // TODO.
-        document.getElementById("status").textContent = "Status: Run button clicked!";
+        let jscode = editor2.getValue();
+        document.getElementById("output").textContent = eval(jscode);
+        document.getElementById("status").textContent = "Status: Executed successfully!";
+        // TODO: This will only print the last result. Should we instead print the return value from every function call made by the user (not made by the generated functions)?
     });
 </script>
 </body>
