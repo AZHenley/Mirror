@@ -78,11 +78,13 @@ class MirrorParser {
     parseType() {
         if (this.match('string', 'number', 'bool')) {
             return this.previous();
-        } else if (this.match('list[')) {
+        } else if (this.match('list')) {
+            this.consume('[');
             const innerType = this.parseType();
             this.consume(']');
             return { type: 'list', innerType };
-        } else if (this.match('dict{')) {
+        } else if (this.match('dict')) {
+            this.consume('{');
             const innerType = this.parseType();
             this.consume('}');
             return { type: 'dict', innerType };
