@@ -62,6 +62,35 @@
             font-size: 16px;
             font-weight: bold;
         }
+
+        .validation-results {
+            margin: 20px 0;
+        }
+
+        .validation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .validation-table th,
+        .validation-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .validation-table th {
+            background-color: #f5f5f5;
+        }
+
+        .pass {
+            color: green;
+        }
+
+        .fail {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -78,6 +107,9 @@
     <div id="editor-source" class="editor"></div>
     <div id="editor-intermediate" class="editor"></div>
 </div>
+
+<!-- Add new validation results section -->
+<div id="validation-results" class="validation-results"></div>
 
 <div class="button-container">
     <button id="button-compile">Compile</button>
@@ -138,48 +170,15 @@ bar(foo(123, 3))`;
         document.getElementById("status").textContent = "Status: Compiling...";
         editor2.setValue("Compiling...")
 
-        // Parse!
-        const code = editor1.getValue();
-        let reorganizedASToutput = "";
-        let expressionsoutput = "";
-        
-        try {
-            // Create a new Mirror parser instance and parse the code.
-            const parser = new MirrorParser(code);
-            const ast = parser.parse();
-            const expressions =  extractExpressions(ast);
-            const reorganizedAST = groupSignaturesWithExamples(ast);
-            
-            // Format the AST as a string and display it in editor2.
-            const ASToutput = JSON.stringify(ast, null, 2);
-            expressionsoutput =  JSON.stringify(expressions)
-            reorganizedASToutput = JSON.stringify(reorganizedAST)
-        
-            // For debugging:
-            // editor2.setValue(ASToutput + "\n\n@@@\n\n" + expressionsoutput + "\n\n@@@\n\n" + reorganizedASToutput);
-            // editor2.clearSelection(); // Clear any selected text.
-
-            document.getElementById("status").textContent = "Status: Code parsed successfully!";
-        } catch (error) {
-            // Display error in editor2 if parsing fails.
-            editor2.setValue("Error: " + error.message);
-            editor2.clearSelection();
-            document.getElementById("status").textContent = "Status: Parsing error!";
-            return;
-        }
-
-        // Compile!
         const compiler = new MirrorCompiler();
-        const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Do not format it as Markdown. Only give the function and the function call expressions afterwards if applicable.\n\n" + reorganizedASToutput + "\n\n" + expressionsoutput;
-        // TODO: This really should make separate calls to OpenAI to generate each function body. Then our code should emit the JS function signature and use the function body from OpenAI. 
-        // TODO: Similarly, the function call expressions should not go to OpenAI. The parser should have a function to emit them.
-
         try {
-            const response = await compiler.callOpenAI(apiKey, prompt);
-            let generatedCode = response;
-            // TODO: We should first verify that the examples do indeed run as specified.
-            editor2.setValue(generatedCode);
+            const result = await compiler.compile(editor1.getValue(), apiKey);
+            editor2.setValue(result.generatedCode);
             editor2.clearSelection();
+            
+            // Validate examples
+            validateExamples(result.generatedCode, result.functions);
+            
             document.getElementById("status").textContent = "Status: Response received from OpenAI!";
         } catch (error) {
             editor2.setValue("Error: " + error.message);
@@ -187,6 +186,56 @@ bar(foo(123, 3))`;
             document.getElementById("status").textContent = "Status: API call error!";
         }
     });
+
+    function validateExamples(generatedCode, functions) {
+        const resultsDiv = document.getElementById("validation-results");
+        resultsDiv.innerHTML = ''; // Clear previous results
+
+        // First eval the generated code to define the functions
+        try {
+            eval(generatedCode);
+        } catch (error) {
+            resultsDiv.innerHTML = `<div class="fail">Error evaluating generated code: ${error.message}</div>`;
+            return;
+        }
+
+        // For each function, create a validation table
+        functions.forEach(func => {
+            const table = document.createElement('table');
+            table.className = 'validation-table';
+            
+            // Add table header
+            const header = `
+                <tr>
+                    <th colspan="4">Function: ${func.name}</th>
+                </tr>
+                <tr>
+                    <th>Inputs</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th>Status</th>
+                </tr>
+            `;
+            table.innerHTML = header;
+
+            // Test each example
+            func.examples.forEach(example => {
+                const row = document.createElement('tr');
+                const actual = eval(`${func.name}(${example.literals.join(', ')})`);
+                const passed = JSON.stringify(actual) === JSON.stringify(example.result);
+                
+                row.innerHTML = `
+                    <td>${example.literals.join(', ')}</td>
+                    <td>${JSON.stringify(example.result)}</td>
+                    <td>${JSON.stringify(actual)}</td>
+                    <td class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'}</td>
+                `;
+                table.appendChild(row);
+            });
+
+            resultsDiv.appendChild(table);
+        });
+    }
 
     // Run button action.
     document.getElementById("button-run").addEventListener("click", async function() {

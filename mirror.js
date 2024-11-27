@@ -2,6 +2,25 @@
 
 // Compiler/LLM wrapper.
 class MirrorCompiler {
+    async compile(code, apiKey) {
+        // Parse the code
+        const parser = new MirrorParser(code);
+        const ast = parser.parse();
+        const expressions = extractExpressions(ast);
+        const reorganizedAST = groupSignaturesWithExamples(ast);
+
+        // Generate code via OpenAI
+        const prompt = "I want you to generate the function body in JavaScript for the function signature that I give you. I will also give you several examples of inputs with the expected results. Do not use any additional libraries. Do not give any explanation. Do not format it as Markdown. Only give the function and the function call expressions afterwards if applicable.\n\n" + JSON.stringify(reorganizedAST) + "\n\n" + JSON.stringify(expressions);
+        
+        const generatedCode = await this.callOpenAI(apiKey, prompt);
+        
+        return {
+            generatedCode,
+            functions: reorganizedAST,
+            expressions
+        };
+    }
+
     async callOpenAI(apiKey, prompt) {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -117,7 +136,7 @@ class MirrorParser {
         } else if (this.matchNumber()) {
             return parseFloat(this.previous());
         } else if (this.matchString()) {
-            return this.previous();
+            return this.previous().slice(1, -1);
         } else if (this.match('[')) {
             const literal = this.parseLiteral();
             this.consume(']');
