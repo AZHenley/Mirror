@@ -9,5 +9,5 @@ literals = literal {"," literal}
 literal = string | number | "true" | "false" | "[" literal "]" |  "{" literal ":" literal "}"
 parameters = parameter {"," parameter}
 parameter = name ":" type
-type = "string" | "number" | "bool" | "list[" type "]" | "dict{" type "}"
+type = "string" | "number" | "bool" | "list[" type "]" | "dict[" type "," type "]"
 // name, string, number are tokens

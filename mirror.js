@@ -66,12 +66,14 @@ class MirrorParser {
 
     parseParameters() {
         const parameters = [];
-        do {
-            const name = this.consumeIdentifier();
-            this.consume(':');
-            const paramType = this.parseType();
-            parameters.push({ name, type: paramType });
-        } while (this.match(','));
+        if (!this.check(')')) { // Handle empty parameter lists
+            do {
+                const name = this.consumeIdentifier();
+                this.consume(':');
+                const paramType = this.parseType();
+                parameters.push({ name, type: paramType });
+            } while (this.match(','));
+        }
         return parameters;
     }
 
@@ -84,10 +86,12 @@ class MirrorParser {
             this.consume(']');
             return { type: 'list', innerType };
         } else if (this.match('dict')) {
-            this.consume('{');
-            const innerType = this.parseType();
-            this.consume('}');
-            return { type: 'dict', innerType };
+            this.consume('['); // Changed from '{' to '['
+            const keyType = this.parseType();
+            this.consume(',');
+            const valueType = this.parseType();
+            this.consume(']');
+            return { type: 'dict', keyType, valueType };
         } else {
             throw new Error(`Unexpected type: ${this.peek()}`);
         }
@@ -105,9 +109,11 @@ class MirrorParser {
 
     parseLiterals() {
         const literals = [];
-        do {
-            literals.push(this.parseLiteral());
-        } while (this.match(','));
+        if (!this.check(')')) { // Handle empty literals
+            do {
+                literals.push(this.parseLiteral());
+            } while (this.match(','));
+        }
         return literals;
     }
 
@@ -119,9 +125,14 @@ class MirrorParser {
         } else if (this.matchString()) {
             return this.previous();
         } else if (this.match('[')) {
-            const literal = this.parseLiteral();
+            const literals = [];
+            if (!this.check(']')) { // Handle empty lists
+                do {
+                    literals.push(this.parseLiteral());
+                } while (this.match(','));
+            }
             this.consume(']');
-            return { type: 'list', value: literal };
+            return { type: 'list', value: literals };
         } else if (this.match('{')) {
             const key = this.parseLiteral();
             this.consume(':');
@@ -143,13 +154,15 @@ class MirrorParser {
 
     parseMix() {
         const mix = [];
-        do {
-            if (this.peekIdentifier()) {
-                mix.push(this.parseExpression());
-            } else {
-                mix.push(this.parseLiteral());
-            }
-        } while (this.match(','));
+        if (!this.check(')')) { // Handle empty expressions
+            do {
+                if (this.peekIdentifier()) {
+                    mix.push(this.parseExpression());
+                } else {
+                    mix.push(this.parseLiteral());
+                }
+            } while (this.match(','));
+        }
         return mix;
     }
 
@@ -230,6 +243,8 @@ class MirrorParser {
 function extractExpressions(ast) {
     return ast.filter(node => node.type === 'expression');
 }
+
+// TODO: We should do type checking on the expressions after parsing (before the LLM).
 
 function groupSignaturesWithExamples(ast) {
     const signatures = ast.filter(node => node.type === 'signature');
