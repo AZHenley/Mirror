@@ -86,7 +86,7 @@ class MirrorParser {
             this.consume(']');
             return { type: 'list', innerType };
         } else if (this.match('dict')) {
-            this.consume('['); // Changed from '{' to '['
+            this.consume('[');
             const keyType = this.parseType();
             this.consume(',');
             const valueType = this.parseType();
@@ -123,7 +123,7 @@ class MirrorParser {
         } else if (this.matchNumber()) {
             return parseFloat(this.previous());
         } else if (this.matchString()) {
-            return this.previous();
+            return this.previous().slice(1, -1); // Remove surrounding quotes
         } else if (this.match('[')) {
             const literals = [];
             if (!this.check(']')) { // Handle empty lists
@@ -134,11 +134,20 @@ class MirrorParser {
             this.consume(']');
             return { type: 'list', value: literals };
         } else if (this.match('{')) {
-            const key = this.parseLiteral();
-            this.consume(':');
-            const value = this.parseLiteral();
+            const dict = {};
+            if (!this.check('}')) { // Handle empty dictionaries
+                do {
+                    const key = this.parseLiteral();
+                    this.consume(':');
+                    const value = this.parseLiteral();
+                    if (typeof key !== 'string') {
+                        throw new Error(`Dictionary keys must be strings. Got: ${JSON.stringify(key)}`);
+                    }
+                    dict[key] = value;
+                } while (this.match(','));
+            }
             this.consume('}');
-            return { type: 'dict', key, value };
+            return { type: 'dict', value: dict };
         } else {
             throw new Error(`Unexpected literal: ${this.peek()}`);
         }
