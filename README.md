@@ -42,8 +42,8 @@ signature foo(x: list[number]) -> number
 example foo([2,9,5]) = 9
 foo([6,3])
 
-signature bar(a: string) -> dict[string, string]
-example bar("food") = {"f": "1", "o": "2", "d": "1"}
+signature bar(a: string) -> dict[string, number]
+example bar("food") = {"f": 1, "o": 2, "d": 1}
 bar("tree")
 bar("anakin")
 ```
